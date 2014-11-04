@@ -142,7 +142,8 @@ class KobukiSafetyFilter(OpenRTM_aist.DataFlowComponentBase):
 		# Set service consumers to Ports
 		
 		# Set CORBA Service Ports
-		
+
+		self._stdout_counter = 0
 		return RTC.RTC_OK
 	
 	#	##
@@ -235,7 +236,7 @@ class KobukiSafetyFilter(OpenRTM_aist.DataFlowComponentBase):
 		vx = yaml.load(self._reaction_vx[0])
 		va = yaml.load(self._reaction_va[0])
 		vt = yaml.load(self._reaction_time[0])
-		
+		self._stdout_counter = self._stdout_counter + 1		
 		if self._bumperIn.isNew():
 			dat = self._bumperIn.read()
 			for i, b in enumerate(dat.data):
@@ -247,16 +248,21 @@ class KobukiSafetyFilter(OpenRTM_aist.DataFlowComponentBase):
 				self._d_out.data.vx = vx[i]
 				self._d_out.data.va = va[i]
 				self._outOut.write()
-				print '[RTC.KobukiSafetyFilter] Escaping'
+				if self._stdout_counter % 20 == 0:
+					print '[RTC.KobukiSafetyFilter] Escaping [Bumper %d] : %s' % (i, self._d_out.data)
 				escaped = True
+				break
 			else:
 				escaped = False
+
 
 		if self._inIn.isNew():
 
 			tv = self._inIn.read()
-			print '[RTC.KobukiSafetyFilter] - vin = ', str(tv)
+
 			if not escaped:
+				if self._stdout_counter % 20 == 0:
+					print '[RTC.KobukiSafetyFilter] - vin = ', str(tv)
 				self._d_out.data.vx = tv.data.vx
 				self._d_out.data.va = tv.data.va
 				self._outOut.write()
